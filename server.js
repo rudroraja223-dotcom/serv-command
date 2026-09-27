@@ -5,7 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "1mb" }));
-app.use(express.static("public"));
+app.get("/", (req, res) => res.sendFile(process.cwd() + "/index.html"));
 
 const SYSTEM = `
 You are SERV Guard, a safety and reliability gate for AI agents.
