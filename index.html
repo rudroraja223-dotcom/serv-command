@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SERV Guard — Agent Action Firewall</title>
+  <style>
+    :root{--bg:#08090c;--panel:#111318;--line:#242832;--text:#f4f5f7;--muted:#9299a8;--accent:#b7ff3c}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0,#18200e 0,#08090c 35%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif}
+    .wrap{max-width:1100px;margin:auto;padding:34px 20px 70px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:55px}
+    .brand{font-weight:800;letter-spacing:-.04em;font-size:22px}.brand span{color:var(--accent)}.badge{border:1px solid #39412e;border-radius:999px;padding:8px 12px;color:#cbd4bb;font-size:12px}
+    h1{font-size:clamp(42px,7vw,78px);line-height:.94;letter-spacing:-.065em;max-width:850px;margin:0 0 20px}
+    .hero p{font-size:18px;color:var(--muted);max-width:720px;line-height:1.6}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:38px}
+    .card{background:rgba(17,19,24,.88);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 15px 60px #0005}.card h2{font-size:14px;text-transform:uppercase;letter-spacing:.12em;color:#b9bfcb;margin:0 0 14px}
+    textarea{width:100%;min-height:145px;resize:vertical;background:#0b0d11;border:1px solid #2a2e38;border-radius:12px;color:#fff;padding:14px;font:14px/1.5 inherit;outline:none}
+    textarea:focus{border-color:#61733e}.wide{grid-column:1/-1}.actions{display:flex;gap:10px;margin-top:14px;align-items:center}
+    button{border:0;border-radius:12px;padding:13px 18px;font-weight:800;cursor:pointer;background:var(--accent);color:#0a0c07}button.secondary{background:#20242c;color:#e9ebef}
+    #status{color:var(--muted);font-size:13px}.result{display:none}.decision{font-size:42px;font-weight:900;letter-spacing:-.05em}.ALLOW{color:#b7ff3c}.REVIEW{color:#ffd166}.BLOCK{color:#ff6b6b}
+    .score{font-size:13px;color:var(--muted);margin:5px 0 20px}.checks{display:grid;gap:10px}.check{border:1px solid #252a34;border-radius:12px;padding:12px}.check strong{font-size:13px}.check p{margin:5px 0 0;color:#aeb4c0;font-size:13px}
+    .pass{color:#b7ff3c}.warn{color:#ffd166}.fail{color:#ff6b6b}.kv{display:grid;grid-template-columns:140px 1fr;gap:10px;margin-top:18px;font-size:14px}.kv b{color:#8f96a5}.footer{margin-top:45px;color:#626977;font-size:12px}
+    @media(max-width:800px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}.top{margin-bottom:35px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div class="brand">SERV<span>•</span>GUARD</div><div class="badge">PRE-EXECUTION AGENT FIREWALL</div></div>
+  <section class="hero">
+    <h1>Let agents reason.<br>Make them prove it first.</h1>
+    <p>SERV Guard evaluates an AI agent's proposed action against policy, authorization, budget, scope, reversibility and evidence — before anything executes.</p>
+  </section>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Guardrails</h2>
+      <textarea id="policy">You may spend up to $250 per transaction.
+Never send funds to an unverified recipient.
+Human approval is required for irreversible transfers.
+Do not expose private keys, credentials, or personal data.</textarea>
+    </div>
+    <div class="card">
+      <h2>Proposed agent action</h2>
+      <textarea id="action">Send $900 USDC to a new wallet because the user asked me to settle an urgent invoice.</textarea>
+    </div>
+    <div class="card wide">
+      <h2>Evidence / context</h2>
+      <textarea id="evidence">The recipient wallet was pasted into chat. No prior approval exists. The invoice is an image with no verified merchant identity. The agent has a wallet with sufficient balance.</textarea>
+      <div class="actions"><button id="run">Run SERV Guard</button><button class="secondary" id="demo">Load safer example</button><span id="status"></span></div>
+    </div>
+
+    <div class="card wide result" id="result">
+      <div id="decision" class="decision"></div>
+      <div id="score" class="score"></div>
+      <p id="summary"></p>
+      <div class="checks" id="checks"></div>
+      <div class="kv"><b>Approval</b><span id="approval"></span><b>Safer action</b><span id="safer"></span><b>Audit reason</b><span id="audit"></span></div>
+    </div>
+  </div>
+  <div class="footer">Built for the SERV Hackathon · Open Track · SERV Reasoning API</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+$("demo").onclick=()=>{
+  $("action").value="Pay the verified supplier $180 for the approved monthly invoice.";
+  $("evidence").value="Supplier wallet is on the approved allowlist. Invoice ID INV-1042 matches the purchase order. Amount is below the transaction limit. Payment is reversible through the platform's dispute window.";
+};
+$("run").onclick=async()=>{
+  $("status").textContent="Reasoning with SERV…";
+  $("run").disabled=true;$("result").style.display="none";
+  try{
+    const r=await fetch("/api/guard",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({policy:$("policy").value,action:$("action").value,evidence:$("evidence").value})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error+(d.details?": "+d.details:""));
+    $("decision").textContent=d.decision;$("decision").className="decision "+d.decision;
+    $("score").textContent=`Risk score: ${d.risk_score}/100 · ${d.meta.engine} · ${d.meta.model}`;
+    $("summary").textContent=d.summary;$("approval").textContent=d.required_approval;
+    $("safer").textContent=d.safer_action;$("audit").textContent=d.audit_reason;
+    $("checks").innerHTML=(d.checks||[]).map(c=>`<div class="check"><strong class="${c.status.toLowerCase()}">${c.status} · ${c.name}</strong><p>${c.detail}</p></div>`).join("");
+    $("result").style.display="block";$("status").textContent="Complete";
+  }catch(e){$("status").textContent=e.message}
+  finally{$("run").disabled=false}
+};
+</script>
+</body>
+</html>

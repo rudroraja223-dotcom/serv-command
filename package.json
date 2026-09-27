@@ -1,0 +1,15 @@
+{
+  "name": "serv-guard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "@openserv-labs/sdk": "^2.4.1",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0"
+  }
+}
