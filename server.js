@@ -71,7 +71,7 @@ ${evidence?.trim() || "No supporting evidence supplied."}
 Evaluate this action before execution.
 `;
 
-    const response = await fetch(`${process.env.SERV_BASE_URL || "https://api.openserv.ai/v1"}/chat/completions`, {
+   const response = await fetch(`${process.env.SERV_BASE_URL || "https://inference-api.openserv.ai/v1"}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
